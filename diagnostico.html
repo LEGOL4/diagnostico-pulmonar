@@ -473,38 +473,70 @@
         // Llamada a la API
         btnAnalyze.onclick = async () => {
             showState('loading');
-            
-            const payload = {
-                data: [{ data: currentImage, name: "radiografia.jpg" }]
-            };
 
+            // Paso 1: despertar el Space haciendo un GET primero
             try {
-                // Intentar con endpoint primario
-                let response = await fetch('https://abelra-pulmon.hf.space/run/predict', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+                await fetch('https://abelra-pulmon.hf.space/', { method: 'GET', mode: 'no-cors' });
+            } catch(_) {}
 
-                if (!response.ok) {
-                    // Reintento con endpoint secundario
-                    response = await fetch('https://abelra-pulmon.hf.space/api/predict', {
+            // Esperar 2 segundos para que el Space arranque si estaba dormido
+            await new Promise(r => setTimeout(r, 2000));
+
+            // El payload que espera Gradio: base64 puro sin el prefijo "data:image/...;base64,"
+            const base64Clean = currentImage.split(',')[1];
+
+            const endpoints = [
+                {
+                    url: 'https://abelra-pulmon.hf.space/run/predict',
+                    body: JSON.stringify({ data: [{ data: currentImage, name: "radiografia.jpg" }] })
+                },
+                {
+                    url: 'https://abelra-pulmon.hf.space/run/predict',
+                    body: JSON.stringify({ data: [currentImage] })
+                },
+                {
+                    url: 'https://abelra-pulmon.hf.space/api/predict',
+                    body: JSON.stringify({ data: [{ data: currentImage, name: "radiografia.jpg" }] })
+                }
+            ];
+
+            let lastError = "";
+
+            for (const ep of endpoints) {
+                try {
+                    const response = await fetch(ep.url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
+                        body: ep.body
                     });
+
+                    if (!response.ok) {
+                        lastError = `HTTP ${response.status}`;
+                        continue;
+                    }
+
+                    const json = await response.json();
+                    processResults(json);
+                    return; // éxito, salir
+
+                } catch (err) {
+                    lastError = err.message;
+                    // esperar un poco antes del siguiente intento
+                    await new Promise(r => setTimeout(r, 1000));
                 }
-
-                if (!response.ok) throw new Error("Servidor no disponible");
-
-                const json = await response.json();
-                processResults(json);
-
-            } catch (err) {
-                console.error(err);
-                errorMsg.innerText = "El servidor de HuggingFace está inactivo o saturado. Por favor, intente de nuevo en unos minutos.";
-                showState('error');
             }
+
+            // Si llegamos aquí, todos fallaron
+            errorMsg.innerHTML = `
+                No se pudo conectar con el servidor de HuggingFace.<br>
+                <small style="color:#94a3b8">Posibles causas: el Space está dormido (espera 30 seg y reintenta), 
+                o el modelo aún no está activo. Error: ${lastError}</small><br><br>
+                <a href="https://abelra-pulmon.hf.space" target="_blank" 
+                   style="color:var(--primary-color);font-weight:600">
+                   → Abrir Space en HuggingFace para activarlo
+                </a>
+            `;
+            showState('error');
         };
 
         function showState(state) {
@@ -516,57 +548,88 @@
         }
 
         function processResults(json) {
+            console.log("Respuesta HF raw:", JSON.stringify(json).substring(0, 400));
             try {
-                const data = json.data[0];
-                let label = typeof data === 'string' ? data : data.label;
-                let confidences = data.confidences || [];
+                let label = "";
+                let confidences = [];
 
-                // Actualizar Textos
-                document.getElementById('resTitle').innerText = label;
-                const badge = document.getElementById('resBadge');
-                badge.innerText = label;
-                
-                // Estilo del Badge
-                badge.className = 'result-badge';
-                const lowerLabel = label.toLowerCase();
-                if (lowerLabel === 'normal') {
-                    badge.classList.add('bg-success');
-                    badge.innerText = 'Saludable';
-                } else if (['covid', 'tuberculosis', 'neumonía', 'pneumonia'].some(k => lowerLabel.includes(k))) {
-                    badge.classList.add('bg-danger');
-                    badge.innerText = 'Crítico';
+                // Gradio Image Classification devuelve: { data: [{ label, confidences:[{label,confidence}] }] }
+                // También puede devolver: { data: ["NombreClase"] }
+                // O directamente: { label, confidences }
+
+                let data = null;
+                if (Array.isArray(json.data) && json.data.length > 0) {
+                    data = json.data[0];
                 } else {
-                    badge.classList.add('bg-warning');
-                    badge.innerText = 'Atención';
+                    data = json;
                 }
 
-                // Barras de Probabilidad
+                if (typeof data === 'string') {
+                    label = data;
+                } else if (data && typeof data.label === 'string') {
+                    label = data.label;
+                    confidences = Array.isArray(data.confidences) ? data.confidences : [];
+                } else if (data && typeof data === 'object') {
+                    // Formato { "Normal": 0.95, "COVID": 0.03, ... }
+                    const entries = Object.entries(data).filter(([k,v]) => typeof v === 'number');
+                    if (entries.length > 0) {
+                        entries.sort((a,b) => b[1]-a[1]);
+                        label = entries[0][0];
+                        confidences = entries.map(([l,c]) => ({ label: l, confidence: c }));
+                    }
+                }
+
+                if (!label) throw new Error("No se pudo leer la etiqueta del resultado.");
+
+                // Actualizar textos
+                document.getElementById('resTitle').innerText = label;
+                const badge = document.getElementById('resBadge');
+                const lowerLabel = label.toLowerCase();
+                badge.className = 'result-badge';
+                if (lowerLabel === 'normal') {
+                    badge.classList.add('bg-success');
+                    badge.innerText = '✓ Saludable';
+                } else if (['covid', 'tuberculosis', 'neumonia', 'neumonía', 'pneumonia'].some(k => lowerLabel.includes(k))) {
+                    badge.classList.add('bg-danger');
+                    badge.innerText = '⚠ Crítico';
+                } else {
+                    badge.classList.add('bg-warning');
+                    badge.innerText = '! Atención';
+                }
+
+                // Barras de probabilidad
                 const wrapper = document.getElementById('barsWrapper');
                 wrapper.innerHTML = "";
-                
+
                 if (confidences.length > 0) {
                     confidences.sort((a, b) => b.confidence - a.confidence);
-                    document.getElementById('resConf').innerText = `Confianza: ${(confidences[0].confidence * 100).toFixed(2)}%`;
+                    const topConf = confidences[0].confidence;
+                    const pctTop = topConf <= 1 ? (topConf * 100).toFixed(1) : topConf.toFixed(1);
+                    document.getElementById('resConf').innerText = `Confianza: ${pctTop}%`;
 
                     confidences.forEach(item => {
-                        const p = (item.confidence * 100).toFixed(1);
+                        const val = item.confidence <= 1 ? item.confidence * 100 : item.confidence;
+                        const p = val.toFixed(1);
+                        const isTop = item.label === label;
                         wrapper.innerHTML += `
                             <div class="bar-container">
                                 <div class="bar-info">
-                                    <span>${item.label}</span>
+                                    <span style="${isTop ? 'font-weight:600;color:#1e293b' : ''}">${item.label}</span>
                                     <span>${p}%</span>
                                 </div>
                                 <div class="bar-bg">
-                                    <div class="bar-fill" style="width: ${p}%"></div>
+                                    <div class="bar-fill" style="width:${p}%;${isTop ? 'background:#1a6fbf' : ''}"></div>
                                 </div>
-                            </div>
-                        `;
+                            </div>`;
                     });
+                } else {
+                    document.getElementById('resConf').innerText = 'Resultado obtenido';
                 }
 
                 showState('success');
             } catch (e) {
-                errorMsg.innerText = "Error al interpretar la respuesta del modelo.";
+                console.error("Error procesando respuesta:", e);
+                errorMsg.innerHTML = `Error al interpretar la respuesta del modelo.<br><small style="color:#94a3b8">${e.message}</small>`;
                 showState('error');
             }
         }
