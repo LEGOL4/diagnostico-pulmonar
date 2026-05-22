@@ -485,18 +485,27 @@
             // El payload que espera Gradio: base64 puro sin el prefijo "data:image/...;base64,"
             const base64Clean = currentImage.split(',')[1];
 
+            // Tu Space usa FastAPI/Uvicorn propio (no Gradio)
+            // Los endpoints reales son /predict o /classify con imagen en base64
+            const base64Only = currentImage.split(',')[1];
+            const mimeType = currentImage.split(';')[0].split(':')[1] || 'image/jpeg';
+
             const endpoints = [
                 {
-                    url: 'https://abelra-pulmon.hf.space/run/predict',
-                    body: JSON.stringify({ data: [{ data: currentImage, name: "radiografia.jpg" }] })
+                    url: 'https://abelra-pulmon.hf.space/predict',
+                    body: JSON.stringify({ image: base64Only })
                 },
                 {
-                    url: 'https://abelra-pulmon.hf.space/run/predict',
-                    body: JSON.stringify({ data: [currentImage] })
+                    url: 'https://abelra-pulmon.hf.space/predict',
+                    body: JSON.stringify({ image: currentImage })
                 },
                 {
-                    url: 'https://abelra-pulmon.hf.space/api/predict',
-                    body: JSON.stringify({ data: [{ data: currentImage, name: "radiografia.jpg" }] })
+                    url: 'https://abelra-pulmon.hf.space/classify',
+                    body: JSON.stringify({ image: base64Only })
+                },
+                {
+                    url: 'https://abelra-pulmon.hf.space/predict',
+                    body: JSON.stringify({ data: base64Only })
                 }
             ];
 
