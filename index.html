@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Inteligente de Diagnóstico Pulmonar | UPN 2025</title>
+    <meta name="description" content="Sistema de diagnóstico pulmonar basado en inteligencia artificial y Deep Learning (CNN) para la detección de 8 enfermedades.">
+    
+    <!-- Fuentes e Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #1a6fbf;
+            --primary-dark: #145696;
+            --secondary-color: #f8fafc;
+            --text-color: #1e293b;
+            --text-light: #64748b;
+            --accent-color: #38bdf8;
+            --success: #22c55e;
+            --warning: #eab308;
+            --danger: #ef4444;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            scroll-behavior: smooth;
+        }
+
+        /* --- NAVBAR --- */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            height: 70px;
+            background-color: var(--white);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 5%;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 25px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            padding: 160px 5% 100px;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            text-align: center;
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hero h1 {
+            font-size: 3.2rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            max-width: 900px;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-light);
+            margin-bottom: 40px;
+            max-width: 700px;
+        }
+
+        .badges {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 40px;
+        }
+
+        .badge {
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            max-width: 1100px;
+            margin: 0 auto 50px;
+            width: 100%;
+        }
+
+        .stat-card {
+            background: var(--white);
+            padding: 30px 20px;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--text-light);
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 18px 45px;
+            background-color: var(--primary-color);
+            color: var(--white);
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(26, 111, 191, 0.2);
+        }
+
+        .cta-button:hover {
+            background-color: var(--primary-dark);
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(26, 111, 191, 0.3);
+        }
+
+        /* --- HOW IT WORKS --- */
+        .section-title {
+            text-align: center;
+            margin-bottom: 60px;
+            font-size: 2.5rem;
+            color: var(--text-color);
+        }
+
+        .how-works {
+            padding: 100px 5%;
+            background-color: var(--white);
+        }
+
+        .steps-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .step-card {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .step-icon {
+            width: 90px;
+            height: 90px;
+            background-color: #f0f9ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+            font-size: 2rem;
+            color: var(--primary-color);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            border: 2px solid var(--white);
+        }
+
+        .step-card h4 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+        }
+
+        .step-card p {
+            color: var(--text-light);
+        }
+
+        /* --- PERFORMANCE SECTION --- */
+        .about-model {
+            padding: 100px 5%;
+            background-color: var(--secondary-color);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-width: 900px;
+            margin: 40px auto;
+            background: var(--white);
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 18px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: var(--text-light);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+        }
+
+        .acc-high { color: var(--success); font-weight: 700; }
+        .acc-mid { color: var(--warning); font-weight: 700; }
+        .acc-low { color: var(--danger); font-weight: 700; }
+
+        .model-note {
+            text-align: center;
+            font-size: 0.95rem;
+            color: var(--text-light);
+            font-style: italic;
+            margin-top: 20px;
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            background-color: #0f172a;
+            color: var(--white);
+            padding: 80px 5% 40px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 60px;
+            max-width: 1200px;
+            margin: 0 auto 60px;
+        }
+
+        .footer-info h3 {
+            margin-bottom: 20px;
+            color: var(--accent-color);
+            font-size: 1.5rem;
+        }
+
+        .footer-info p {
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+
+        .footer-links h4 {
+            margin-bottom: 25px;
+            font-size: 1.2rem;
+        }
+
+        .footer-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 15px;
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            color: var(--white);
+            padding-left: 5px;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #1e293b;
+            padding-top: 30px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.2rem; }
+            .nav-links { display: none; }
+            .footer-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <i class="fas fa-lungs"></i>
+            <span>PULMON AI</span>
+        </a>
+        <div class="nav-links">
+            <a href="index.html">Inicio</a>
+            <a href="diagnostico.html">Diagnóstico</a>
+            <a href="#how-it-works">Cómo funciona</a>
+            <a href="https://huggingface.co/spaces/abelra/pulmon" target="_blank">HuggingFace</a>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <header class="hero">
+        <div class="badges">
+            <span class="badge">UPN 2025</span>
+            <span class="badge">CNN</span>
+            <span class="badge">Deep Learning</span>
+        </div>
+        <h1>Diagnóstico Pulmonar con Inteligencia Artificial</h1>
+        <p>Plataforma avanzada de asistencia médica que utiliza modelos de visión artificial para la detección de patologías en radiografías de tórax con precisión profesional.</p>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>76.29%</h3>
+                <p>Accuracy Global</p>
+            </div>
+            <div class="stat-card">
+                <h3>8</h3>
+                <p>Patologías</p>
+            </div>
+            <div class="stat-card">
+                <h3>5,778</h3>
+                <p>Dataset Base</p>
+            </div>
+            <div class="stat-card">
+                <h3>96.18%</h3>
+                <p>Máxima Precisión</p>
+            </div>
+        </div>
+
+        <a href="diagnostico.html" class="cta-button">Iniciar Diagnóstico <i class="fas fa-arrow-right" style="margin-left: 10px;"></i></a>
+    </header>
+
+    <!-- HOW IT WORKS -->
+    <section id="how-it-works" class="how-works">
+        <h2 class="section-title">Proceso de Análisis</h2>
+        <div class="steps-container">
+            <div class="step-card">
+                <div class="step-icon"><i class="fas fa-upload"></i></div>
+                <h4>1. Carga</h4>
+                <p>Sube la radiografía digitalizada (PNG/JPG) a nuestra plataforma segura.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-icon"><i class="fas fa-brain"></i></div>
+                <h4>2. Procesamiento</h4>
+                <p>Nuestra red neuronal convolucional analiza patrones y texturas del tejido pulmonar.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-icon"><i class="fas fa-chart-pie"></i></div>
+                <h4>3. Clasificación</h4>
+                <p>El sistema asigna probabilidades entre 8 categorías diagnósticas distintas.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-icon"><i class="fas fa-notes-medical"></i></div>
+                <h4>4. Reporte</h4>
+                <p>Obtén un desglose detallado de la confianza del modelo para cada patología.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ABOUT MODEL -->
+    <section class="about-model">
+        <h2 class="section-title">Métricas de Rendimiento</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Enfermedad / Categoría</th>
+                        <th>Accuracy (Exactitud)</th>
+                        <th>Nivel de Confianza</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Tuberculosis</td><td>96.18%</td><td><span class="acc-high">Excelente</span></td></tr>
+                    <tr><td>Normal (Sano)</td><td>95.05%</td><td><span class="acc-high">Excelente</span></td></tr>
+                    <tr><td>Viral Pneumonia</td><td>84.39%</td><td><span class="acc-high">Muy Alto</span></td></tr>
+                    <tr><td>Neumonía Bacteriana</td><td>75.38%</td><td><span class="acc-mid">Alto</span></td></tr>
+                    <tr><td>Lung Opacity</td><td>57.90%</td><td><span class="acc-mid">Moderado</span></td></tr>
+                    <tr><td>COVID-19</td><td>45.78%</td><td><span class="acc-low">En Mejora</span></td></tr>
+                    <tr><td>Bronquitis</td><td>0%*</td><td><span class="acc-low">Sin Muestras</span></td></tr>
+                    <tr><td>Fibrosis</td><td>0%*</td><td><span class="acc-low">Sin Muestras</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="model-note">* Nota: Las clases con 0% se deben a limitaciones del dataset de entrenamiento. El sistema está en constante actualización.</p>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-info">
+                <h3>PULMON AI</h3>
+                <p>Proyecto de Innovación Tecnológica 2025.</p>
+                <p><strong>Universidad:</strong> Universidad Privada del Norte (UPN)</p>
+                <p><strong>Docente:</strong> Raul Eduardo Huarote Zegarra</p>
+                <p style="margin-top: 20px;"><strong>Equipo de Desarrollo:</strong></p>
+                <p>Aniceto Nuñez Rodrigo, Pacheco de la Cruz Esfania,<br>
+                   Rodriguez Chacara Oscar, Rojas Asto Abel</p>
+            </div>
+            <div class="footer-links">
+                <h4>Recursos</h4>
+                <a href="https://huggingface.co/spaces/abelra/pulmon" target="_blank">Modelo en HuggingFace</a>
+                <a href="https://www.upn.edu.pe/" target="_blank">Portal UPN</a>
+                <a href="diagnostico.html">Acceso a Diagnóstico</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 Sistema Inteligente de Diagnóstico Pulmonar. Todos los derechos reservados.
+        </div>
+    </footer>
+
+</body>
+</html>

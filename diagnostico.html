@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Diagnóstico | PULMON AI</title>
+    
+    <!-- Fuentes e Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #1a6fbf;
+            --primary-dark: #145696;
+            --secondary-color: #f8fafc;
+            --text-color: #1e293b;
+            --text-light: #64748b;
+            --success: #22c55e;
+            --warning: #eab308;
+            --danger: #ef4444;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- NAVBAR --- */
+        .navbar {
+            height: 70px;
+            background-color: var(--white);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 5%;
+            box-shadow: var(--shadow);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: var(--text-light);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .back-link:hover {
+            color: var(--primary-color);
+        }
+
+        /* --- MAIN CONTENT --- */
+        .main-container {
+            flex: 1;
+            padding: 40px 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+        }
+
+        .page-header h1 {
+            font-size: 1.8rem;
+            color: var(--text-color);
+        }
+
+        .page-header p {
+            color: var(--text-light);
+        }
+
+        .diagnostic-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        /* Columna Izquierda: Carga */
+        .card {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid #e2e8f0;
+        }
+
+        .drop-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background-color: #f8fafc;
+            min-height: 350px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--primary-color);
+            background-color: #f0f9ff;
+        }
+
+        .drop-zone i {
+            font-size: 3.5rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            opacity: 0.8;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            display: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn-analyze {
+            width: 100%;
+            padding: 16px;
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-analyze:hover:not(:disabled) {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-analyze:disabled {
+            background-color: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        .disease-tags {
+            margin-top: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tag {
+            padding: 6px 14px;
+            background-color: #f1f5f9;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Columna Derecha: Resultados */
+        .result-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 500px;
+            text-align: center;
+        }
+
+        .placeholder-content i {
+            font-size: 5rem;
+            color: #e2e8f0;
+            margin-bottom: 20px;
+        }
+
+        .placeholder-content p {
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-data {
+            width: 100%;
+            text-align: left;
+            display: none;
+        }
+
+        .result-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            margin-bottom: 15px;
+        }
+
+        .bg-success { background-color: var(--success); }
+        .bg-warning { background-color: var(--warning); }
+        .bg-danger { background-color: var(--danger); }
+
+        .result-title {
+            font-size: 2.2rem;
+            margin-bottom: 5px;
+            color: var(--text-color);
+        }
+
+        .result-conf {
+            font-size: 1.2rem;
+            color: var(--text-light);
+            margin-bottom: 30px;
+        }
+
+        .bar-container {
+            margin-bottom: 15px;
+        }
+
+        .bar-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .bar-bg {
+            height: 10px;
+            background-color: #e2e8f0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0;
+            transition: width 1s cubic-bezier(0.1, 0.7, 1.0, 0.1);
+        }
+
+        .disclaimer-box {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #fff1f2;
+            border-radius: 10px;
+            border-left: 5px solid var(--danger);
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .disclaimer-box i {
+            color: var(--danger);
+            font-size: 1.2rem;
+            margin-top: 3px;
+        }
+
+        .disclaimer-text {
+            font-size: 0.85rem;
+            color: #9f1239;
+            line-height: 1.5;
+        }
+
+        /* Footer */
+        .footer-simple {
+            padding: 30px;
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            border-top: 1px solid #e2e8f0;
+            background: var(--white);
+        }
+
+        @media (max-width: 992px) {
+            .diagnostic-grid { grid-template-columns: 1fr; }
+            .main-container { padding: 20px 5%; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <i class="fas fa-lungs"></i>
+            <span>PULMON AI</span>
+        </a>
+        <a href="index.html" class="back-link">
+            <i class="fas fa-arrow-left"></i> Volver al inicio
+        </a>
+    </nav>
+
+    <main class="main-container">
+        <div class="page-header">
+            <h1>Panel de Diagnóstico Asistido</h1>
+            <p>Cargue la radiografía de tórax del paciente para iniciar el análisis por red neuronal.</p>
+        </div>
+
+        <div class="diagnostic-grid">
+            <!-- CARGA DE IMAGEN -->
+            <div class="card">
+                <div class="drop-zone" id="dropZone">
+                    <div id="dropPrompt">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h3>Arrastre la radiografía</h3>
+                        <p>o haga clic para seleccionar archivo</p>
+                        <span style="font-size: 0.75rem; color: #94a3b8; margin-top: 10px; display: block;">Formatos: JPG, JPEG, PNG</span>
+                    </div>
+                    <img id="imgPreview" class="preview-image">
+                    <input type="file" id="fileInput" hidden accept="image/*">
+                </div>
+
+                <button id="btnAnalyze" class="btn-analyze" disabled>
+                    <i class="fas fa-microchip"></i> Analizar Radiografía
+                </button>
+
+                <div class="disease-tags">
+                    <span class="tag">Normal</span>
+                    <span class="tag">Neumonía</span>
+                    <span class="tag">COVID-19</span>
+                    <span class="tag">Tuberculosis</span>
+                    <span class="tag">Bronquitis</span>
+                    <span class="tag">Fibrosis</span>
+                    <span class="tag">Lung Opacity</span>
+                    <span class="tag">Viral Pneumonia</span>
+                </div>
+            </div>
+
+            <!-- RESULTADOS -->
+            <div class="card result-panel" id="resultPanel">
+                <!-- Inicial -->
+                <div id="stateInitial" class="placeholder-content">
+                    <i class="fas fa-file-medical-alt"></i>
+                    <p>Esperando carga de imagen para procesar...</p>
+                </div>
+
+                <!-- Cargando -->
+                <div id="stateLoading" style="display: none;">
+                    <div class="spinner"></div>
+                    <h3>Procesando Imagen</h3>
+                    <p>Extrayendo características con el modelo CNN...</p>
+                </div>
+
+                <!-- Error -->
+                <div id="stateError" style="display: none; color: var(--danger);">
+                    <i class="fas fa-exclamation-circle" style="font-size: 4rem; margin-bottom: 20px;"></i>
+                    <h3>Error de Conexión</h3>
+                    <p id="errorMsg">No se pudo contactar con el servicio de IA.</p>
+                    <button onclick="location.reload()" style="margin-top: 20px; padding: 8px 20px; border: 1px solid var(--danger); background: none; color: var(--danger); border-radius: 5px; cursor: pointer;">Reintentar</button>
+                </div>
+
+                <!-- Éxito -->
+                <div id="stateSuccess" class="result-data">
+                    <div id="resBadge" class="result-badge">Normal</div>
+                    <h2 id="resTitle" class="result-title">Normal</h2>
+                    <p id="resConf" class="result-conf">Confianza: 98.5%</p>
+                    
+                    <div id="barsWrapper">
+                        <!-- Bars injected here -->
+                    </div>
+
+                    <div class="disclaimer-box">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div class="disclaimer-text">
+                            <strong>Advertencia Médica:</strong> Este resultado es generado por un algoritmo de inteligencia artificial con fines académicos. No reemplaza el juicio clínico de un radiólogo o neumólogo colegiado.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer-simple">
+        &copy; 2025 Universidad Privada del Norte | Facultad de Ingeniería | IA para la Salud
+    </footer>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const imgPreview = document.getElementById('imgPreview');
+        const dropPrompt = document.getElementById('dropPrompt');
+        const btnAnalyze = document.getElementById('btnAnalyze');
+        
+        const stateInitial = document.getElementById('stateInitial');
+        const stateLoading = document.getElementById('stateLoading');
+        const stateSuccess = document.getElementById('stateSuccess');
+        const stateError = document.getElementById('stateError');
+        const errorMsg = document.getElementById('errorMsg');
+
+        let currentImage = "";
+
+        // Eventos de Archivo
+        dropZone.onclick = () => fileInput.click();
+        
+        dropZone.ondragover = (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        };
+
+        dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        };
+
+        fileInput.onchange = (e) => handleFile(e.target.files[0]);
+
+        function handleFile(file) {
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imgPreview.src = e.target.result;
+                    imgPreview.style.display = 'block';
+                    dropPrompt.style.display = 'none';
+                    btnAnalyze.disabled = false;
+                    currentImage = e.target.result;
+                    
+                    // Resetear panel de resultados al cambiar imagen
+                    showState('initial');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Llamada a la API
+        btnAnalyze.onclick = async () => {
+            showState('loading');
+            
+            const payload = {
+                data: [{ data: currentImage, name: "radiografia.jpg" }]
+            };
+
+            try {
+                // Intentar con endpoint primario
+                let response = await fetch('https://abelra-pulmon.hf.space/run/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    // Reintento con endpoint secundario
+                    response = await fetch('https://abelra-pulmon.hf.space/api/predict', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+                if (!response.ok) throw new Error("Servidor no disponible");
+
+                const json = await response.json();
+                processResults(json);
+
+            } catch (err) {
+                console.error(err);
+                errorMsg.innerText = "El servidor de HuggingFace está inactivo o saturado. Por favor, intente de nuevo en unos minutos.";
+                showState('error');
+            }
+        };
+
+        function showState(state) {
+            [stateInitial, stateLoading, stateSuccess, stateError].forEach(el => el.style.display = 'none');
+            if (state === 'initial') stateInitial.style.display = 'block';
+            if (state === 'loading') stateLoading.style.display = 'block';
+            if (state === 'success') stateSuccess.style.display = 'block';
+            if (state === 'error') stateError.style.display = 'block';
+        }
+
+        function processResults(json) {
+            try {
+                const data = json.data[0];
+                let label = typeof data === 'string' ? data : data.label;
+                let confidences = data.confidences || [];
+
+                // Actualizar Textos
+                document.getElementById('resTitle').innerText = label;
+                const badge = document.getElementById('resBadge');
+                badge.innerText = label;
+                
+                // Estilo del Badge
+                badge.className = 'result-badge';
+                const lowerLabel = label.toLowerCase();
+                if (lowerLabel === 'normal') {
+                    badge.classList.add('bg-success');
+                    badge.innerText = 'Saludable';
+                } else if (['covid', 'tuberculosis', 'neumonía', 'pneumonia'].some(k => lowerLabel.includes(k))) {
+                    badge.classList.add('bg-danger');
+                    badge.innerText = 'Crítico';
+                } else {
+                    badge.classList.add('bg-warning');
+                    badge.innerText = 'Atención';
+                }
+
+                // Barras de Probabilidad
+                const wrapper = document.getElementById('barsWrapper');
+                wrapper.innerHTML = "";
+                
+                if (confidences.length > 0) {
+                    confidences.sort((a, b) => b.confidence - a.confidence);
+                    document.getElementById('resConf').innerText = `Confianza: ${(confidences[0].confidence * 100).toFixed(2)}%`;
+
+                    confidences.forEach(item => {
+                        const p = (item.confidence * 100).toFixed(1);
+                        wrapper.innerHTML += `
+                            <div class="bar-container">
+                                <div class="bar-info">
+                                    <span>${item.label}</span>
+                                    <span>${p}%</span>
+                                </div>
+                                <div class="bar-bg">
+                                    <div class="bar-fill" style="width: ${p}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                showState('success');
+            } catch (e) {
+                errorMsg.innerText = "Error al interpretar la respuesta del modelo.";
+                showState('error');
+            }
+        }
+    </script>
+</body>
+</html>
